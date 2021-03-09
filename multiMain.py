@@ -1,7 +1,7 @@
 import requests
 import json
-from dbMulti import TableManager
-import sys
+from multiDB import TableManager
+
 
 def buildUrl(symbol):
   # Zu Base-Url wird API-Key und Kürzel hinzugefügt
@@ -10,83 +10,102 @@ def buildUrl(symbol):
     url += "&symbol=" + symbol
     return url
 
+
 stocks = open("stocks.txt").read().split(",")
 
-# TODO for symbol in stocks:
-tb = TableManager(stocks[0]) # TODO
-tb.createTable()
-url = buildUrl(tb.getSymbol())
-response = requests.get(url).content
-jsonData = json.loads(response)
+for symbol in stocks:
+    print("%s:" % symbol.upper())
+    tb = TableManager(symbol)
+    tb.createTable()
+    url = buildUrl(tb.getSymbol())
+    response = requests.get(url).content
+    jsonData = json.loads(response)
 
-if "Time Series (Daily)" in jsonData:
-    jsonData = jsonData["Time Series (Daily)"]
+    if "Time Series (Daily)" in jsonData:
+        jsonData = jsonData["Time Series (Daily)"]
 
-elif "Note" in jsonData:
-    print("Bandwidth exhausted (max. 5 per minute)")#
+    elif "Note" in jsonData:
+        print("Bandwidth exhausted (max. 5 per minute)")
+        break
 
-elif "Error Message" in jsonData:
-    print("Symbol \"%s\" not found" % tb.getSymbol())
+    elif "Error Message" in jsonData:
+        print("Symbol \"%s\" not found" % tb.getSymbol())
+        continue
 
-else:
-    print("Error while trying keys on API data")
-    print(jsonData)
-    sys.exit()
-
-if tb.getTableSize() > 1000:
-    print("Symbol \"%s\" already has 1000+ entries in DB\n" % tb.getSymbol())
-
-    latestDbEntry = tb.getLatestDate()
-    print("Latest DB Entry:  %s" % latestDbEntry)
-    latestApiEntry = next(iter(jsonData))
-    print("Latest API Entry: %s\n" % latestApiEntry)
-
-    counter = 0
-    for date in jsonData:
-        if date == latestDbEntry:
-            break
-
-        close = jsonData[date]["4. close"]
-        tb.insertClose(date, close)
-        counter += 1
-
-    if counter == 0:
-        print("DB is up-to-date.")
     else:
-        print(str(counter) + " days updated.")
+        print("Error while trying keys on API data")
+        print(jsonData)
+        break
 
-else:
-    print("Symbol \"%s\" does not have enough data in DB. Saving full API call." % tb.getSymbol())
+    if tb.getTableSize() > 1000:
+        print("  Symbol \"%s\" already has 1000+ entries in DB\n" %
+              tb.getSymbol())
 
-    for date in jsonData:
+        latestDbEntry = tb.getLatestDate()
+        print("  Latest DB Entry:  %s" % latestDbEntry)
+        latestApiEntry = next(iter(jsonData))
+        print("  Latest API Entry: %s\n" % latestApiEntry)
+
+        counter = 0
+        splitfound = False
+        for date in jsonData:
+            if date == latestDbEntry:
+                break
+
+            if date == "2021-03-01":
+                jsonData[date]["8. split coefficient"] = "5.0"
+
+            if jsonData[date]["8. split coefficient"] != "1.0":
+                print("! Found split at %s while trying to update table.\n\n" % date)
+                stocks.append(tb.getSymbol())
+                tb.dropTable()
+                splitfound = True
+                break
+
+            close = jsonData[date]["4. close"]
+            tb.insertClose(date, close)
+            counter += 1
+
+        if splitfound:
+            continue
+
+        if counter == 0:
+            print("  DB is up-to-date.")
+        else:
+            print("  " + str(counter) + " days updated.")
+
+    else:
+        print("  Symbol \"%s\" does not have enough data in DB. Saving full API call.\n" %
+              tb.getSymbol())
+
         split_coefficient = 1.0
-        current_split = jsonData[date]["8. split coefficient"]
 
-        close = float(jsonData[date]["4. close"])
-        close /= split_coefficient
-        close = round(close, 2)
-        tb.insertClose(date, close)
+        for date in jsonData:
+            current_split = jsonData[date]["8. split coefficient"]
 
-        split_coefficient *= float(current_split)
+            close = float(jsonData[date]["4. close"])
+            close /= split_coefficient
+            close = round(close, 2)
+            tb.insertClose(date, close)
+            split_coefficient *= float(current_split)
 
-        if current_split != "1.0":
-            print("Split am %s mit dem Wert %s." % (date, current_split))
-            print("Split jetzt bei %s." % split_coefficient)
+            if current_split != "1.0":
+                print("  Split on %s with value %s." % (date, current_split))
+                print("  Split now at %s.\n" % split_coefficient)
 
-tb.commit()
+    tb.commit()
 
-dbData = tb.getAllData()
-moving_average_days = 200
+    dbData = tb.getAllData()
+    moving_average_days = 200
 
-for i in range(tb.getTableSize() - moving_average_days):
-    sum = 0
-    for j in range(moving_average_days):
-        sum += dbData[i + j][1]
+    for i in range(tb.getTableSize() - moving_average_days):
+        sum = 0
+        for j in range(moving_average_days):
+            sum += dbData[i + j][1]
 
-    result = sum / moving_average_days
-    result = round(result, 2)
-    tb.insertAverage200(dbData[i][0], result)
+        result = sum / moving_average_days
+        result = round(result, 2)
+        tb.insertAverage200(dbData[i][0], result)
 
-tb.commit()
-print("Moving average calculated and saved to DB.")
-
+    tb.commit()
+    print("  Moving average calculated and saved to DB.\n\n")

@@ -1,1 +1,1 @@
-amd,ibm,aapl
+tsla,aapl

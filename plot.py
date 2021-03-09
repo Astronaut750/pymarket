@@ -1,4 +1,4 @@
-import db
+import singleDB
 from matplotlib import pyplot as plt
 from datetime import date as dt
 
@@ -9,7 +9,7 @@ def inputDate(nr, cursor, symbol, begDate="1901-01-01"):
         date = input("Datum %s (YYYY-MM-DD): " % nr)
         try:
             date = dt.fromisoformat(date)
-            if date < dt.fromisoformat(db.getFirstDate(cursor, symbol)) or date > dt.fromisoformat(db.getLatestDate(cursor, symbol)):
+            if date < dt.fromisoformat(singleDB.getFirstDate(cursor, symbol)) or date > dt.fromisoformat(singleDB.getLatestDate(cursor, symbol)):
                 print("Date out of Range\n")
                 continue
             elif date < dt.fromisoformat(begDate):
@@ -36,19 +36,19 @@ def plot(cursor, symbol, dbData):
     plt.xlabel("dates")
     plt.ylabel("close & average200")
     plt.title(symbol)
-    if db.latestCloseAboveAverage200(cursor, symbol):
+    if singleDB.latestCloseAboveAverage200(cursor, symbol):
         ax.set_facecolor("xkcd:peach")
     else:
         ax.set_facecolor("xkcd:light green")
     plt.show()
 
 
-conn = db.open()
+conn = singleDB.open()
 cursor = conn.cursor()
-symbol = "amd"
+symbol = "tsla"
 
 #begDate = inputDate(1, cursor, symbol)
 #endDate = inputDate(2, cursor, symbol, begDate)
 
-plot(cursor, symbol, db.getAllDataForPlot(cursor, symbol))
-#plot(cursor, symbol, db.getSpecDataForPlot(cursor, symbol, begDate, endDate))
+plot(cursor, symbol, singleDB.getAllDataForPlot(cursor, symbol))
+#plot(cursor, symbol, singleDB.getSpecDataForPlot(cursor, symbol, begDate, endDate))
