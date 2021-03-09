@@ -1,1 +1,1 @@
-tadasdsla,amd,ibm,aapl
+amd,ibm,aapl

@@ -45,10 +45,10 @@ def plot(cursor, symbol, dbData):
 
 conn = db.open()
 cursor = conn.cursor()
-symbol = "tsla"
+symbol = "amd"
 
-begDate = inputDate(1, cursor, symbol)
-endDate = inputDate(2, cursor, symbol, begDate)
+#begDate = inputDate(1, cursor, symbol)
+#endDate = inputDate(2, cursor, symbol, begDate)
 
-#plot(cursor, symbol, db.getAllDataForPlot(cursor, symbol))
-plot(cursor, symbol, db.getSpecDataForPlot(cursor, symbol, begDate, endDate))
+plot(cursor, symbol, db.getAllDataForPlot(cursor, symbol))
+#plot(cursor, symbol, db.getSpecDataForPlot(cursor, symbol, begDate, endDate))
