@@ -52,9 +52,6 @@ for symbol in stocks:
             if date == latestDbEntry:
                 break
 
-            if date == "2021-03-01":
-                jsonData[date]["8. split coefficient"] = "5.0"
-
             if jsonData[date]["8. split coefficient"] != "1.0":
                 print("! Found split at %s while trying to update table.\n\n" % date)
                 stocks.append(tb.getSymbol())
