@@ -37,15 +37,15 @@ def plot(cursor, symbol, dbData):
     plt.ylabel("close & average200")
     plt.title(symbol)
     if singleDB.latestCloseAboveAverage200(cursor, symbol):
-        ax.set_facecolor("xkcd:peach")
-    else:
         ax.set_facecolor("xkcd:light green")
+    else:
+        ax.set_facecolor("xkcd:peach")
     plt.show()
 
 
 conn = singleDB.open()
 cursor = conn.cursor()
-symbol = "tsla"
+symbol = "amd"
 
 #begDate = inputDate(1, cursor, symbol)
 #endDate = inputDate(2, cursor, symbol, begDate)

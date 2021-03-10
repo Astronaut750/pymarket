@@ -1,6 +1,6 @@
 import requests
 import json
-import db
+import singleDB
 
 # Standard input für Extension AREPL
 standard_input = "tsla"
@@ -35,18 +35,18 @@ while symbolInvalid:
 
 
 # Verbinden mit DB und Tabelle erstellen
-conn = db.open()
+conn = singleDB.open()
 cursor = conn.cursor()
-db.createTable(cursor, symbol)
+singleDB.createTable(cursor, symbol)
 
 
 # Überprüfung ob schon genügend Daten vorhanden sind
 split_coefficient = 1.0
-if db.getTableSize(cursor, symbol) > 1000:
+if singleDB.getTableSize(cursor, symbol) > 1000:
     print("Zum angegebenen Ticker exisitert bereits eine Tabelle mit über 1000 Einträgen.\n")
 
     # Aktualität überprüfen
-    latestDbEntry = db.getLatestDate(cursor, symbol)
+    latestDbEntry = singleDB.getLatestDate(cursor, symbol)
     print("Letzer Eintrag in der Datenbank: %s" % latestDbEntry)
 
     latestApiEntry = next(iter(jsonData))
@@ -59,7 +59,7 @@ if db.getTableSize(cursor, symbol) > 1000:
             break
 
         close = jsonData[day]["4. close"]
-        db.insertClose(cursor, symbol, day, close)
+        singleDB.insertClose(cursor, symbol, day, close)
         counter += 1
 
     if counter == 0:
@@ -78,7 +78,7 @@ else:
             closeFloat /= split_coefficient
             closeFloat = round(closeFloat, 2)
             close = str(closeFloat)
-            db.insertClose(cursor, symbol, day, close)
+            singleDB.insertClose(cursor, symbol, day, close)
 
             split_coefficient *= float(current_split)
 
@@ -88,14 +88,14 @@ else:
         else:
             close = round(
                 float(jsonData[day]["4. close"]) / split_coefficient, 2)
-            db.insertClose(cursor, symbol, day, close)
+            singleDB.insertClose(cursor, symbol, day, close)
 
 # Am Ende müssen alle geänderten Einträge übernommen werden
 conn.commit()
-del jsonData
+#del jsonData
 
 
-dbData = db.getAllData(cursor, symbol)
+dbData = singleDB.getAllData(cursor, symbol)
 moving_average_days = 200
 
 for i in range(len(dbData) - moving_average_days):
@@ -104,7 +104,7 @@ for i in range(len(dbData) - moving_average_days):
         sum += dbData[i + j][1]
 
     result = str(round(sum / moving_average_days, 2))
-    db.insertAverage200(cursor, symbol, result, dbData[i][0])
+    singleDB.insertAverage200(cursor, symbol, result, dbData[i][0])
 
 conn.commit()
 print("Moving average für alle Tage berechnet und abgespeichert.")
