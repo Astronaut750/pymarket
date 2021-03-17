@@ -97,8 +97,9 @@ for symbol in stocks:
 
     for i in range(tb.getTableSize() - moving_average_days):
         sum = 0
+
         for j in range(moving_average_days):
-            sum += dbData[i + j][1]
+            sum += dbData[i+j][1]
 
         result = sum / moving_average_days
         result = round(result, 2)
