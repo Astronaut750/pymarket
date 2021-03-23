@@ -1,7 +1,7 @@
 import requests
 import json
 from multiDB import TableManager
-
+import time
 
 def buildUrl(symbol):
   # Zu Base-Url wird API-Key und Kürzel hinzugefügt
@@ -14,10 +14,11 @@ def buildUrl(symbol):
 stocks = open("stocks.txt").read().split(",")
 
 for symbol in stocks:
-    print("%s:" % symbol.upper())
     tb = TableManager(symbol)
     tb.createTable()
     url = buildUrl(tb.getSymbol())
+    print("%s: %s" % (tb.getSymbol().upper(), url))
+
     response = requests.get(url).content
     jsonData = json.loads(response)
 
@@ -37,8 +38,8 @@ for symbol in stocks:
         print(jsonData)
         break
 
-    if tb.getTableSize() > 1000:
-        print("  Symbol \"%s\" already has 1000+ entries in DB\n" %
+    if tb.getTableSize() > 0:
+        print("  Table \"%s\" is not empty. Updating DB.\n" %
               tb.getSymbol())
 
         latestDbEntry = tb.getLatestDate()
@@ -47,24 +48,13 @@ for symbol in stocks:
         print("  Latest API Entry: %s\n" % latestApiEntry)
 
         counter = 0
-        splitfound = False
         for date in jsonData:
             if date == latestDbEntry:
                 break
 
-            if jsonData[date]["8. split coefficient"] != "1.0":
-                print("! Found split at %s while trying to update table.\n\n" % date)
-                stocks.append(tb.getSymbol())
-                tb.dropTable()
-                splitfound = True
-                break
-
-            close = jsonData[date]["4. close"]
+            close = jsonData[date]["5. adjusted close"]
             tb.insertClose(date, close)
             counter += 1
-
-        if splitfound:
-            continue
 
         if counter == 0:
             print("  DB is up-to-date.")
@@ -72,23 +62,12 @@ for symbol in stocks:
             print("  " + str(counter) + " days updated.")
 
     else:
-        print("  Symbol \"%s\" does not have enough data in DB. Saving full API call.\n" %
+        print("  Table \"%s\" is empty. Saving full API call.\n" %
               tb.getSymbol())
 
-        split_coefficient = 1.0
-
         for date in jsonData:
-            current_split = jsonData[date]["8. split coefficient"]
-
-            close = float(jsonData[date]["4. close"])
-            close /= split_coefficient
-            close = round(close, 2)
+            close = jsonData[date]["5. adjusted close"]
             tb.insertClose(date, close)
-            split_coefficient *= float(current_split)
-
-            if current_split != "1.0":
-                print("  Split on %s with value %s." % (date, current_split))
-                print("  Split now at %s.\n" % split_coefficient)
 
     tb.commit()
 
@@ -107,3 +86,4 @@ for symbol in stocks:
 
     tb.commit()
     print("  Moving average calculated and saved to DB.\n\n")
+    time.sleep(15)

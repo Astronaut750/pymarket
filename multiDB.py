@@ -41,7 +41,7 @@ class TableManager:
         self.conn.commit()
 
     def getTableSize(self):
-        sql = "SELECT COUNT(date) FROM %s;" % self.symbol
+        sql = "SELECT count(date) FROM %s;" % self.symbol
         self.cursor.execute(sql)
         return int(self.cursor.fetchone()[0])
 
@@ -68,6 +68,13 @@ class TableManager:
     def getSpecDataForPlot(self, begDate, endDate):
         sql = "SELECT * FROM %s WHERE average200 IS NOT NULL AND date >= \"%s\" AND date <= \"%s\" ORDER BY DATE ASC;" % (
             self.symbol, begDate, endDate)
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+    def getDataForRanking(self, month, year):
+        begMonth = year + "-" + month.zfill(2) + "-01"
+        endMonth = year + "-" + month.zfill(2) + "-31"
+        sql = "SELECT * FROM %s WHERE date >= \"%s\" AND date <= \"%s\" ORDER BY DATE ASC;" % (self.symbol, begMonth, endMonth)
         self.cursor.execute(sql)
         return self.cursor.fetchall()
 
