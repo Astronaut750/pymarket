@@ -37,6 +37,16 @@ class TableManager:
             self.symbol, average200, date)
         self.cursor.execute(sql)
 
+    def insertSaisonal(self, symbol, year, month, gain):
+        sql = "INSERT INTO saisonal_m VALUES(\"%s\", %s, %s, %s);" % (
+            symbol, year, month, gain)
+        self.cursor.execute(sql)
+
+    def deleteFromSaisonal(self):
+        sql = "DELETE FROM saisonal_m;"
+        self.cursor.execute(sql)
+        self.commit()
+
     def commit(self):
         self.conn.commit()
 
@@ -74,7 +84,19 @@ class TableManager:
     def getDataForRanking(self, month, year):
         begMonth = year + "-" + month.zfill(2) + "-01"
         endMonth = year + "-" + month.zfill(2) + "-31"
-        sql = "SELECT * FROM %s WHERE date >= \"%s\" AND date <= \"%s\" ORDER BY DATE ASC;" % (self.symbol, begMonth, endMonth)
+        sql = "SELECT * FROM %s WHERE date >= \"%s\" AND date <= \"%s\" ORDER BY DATE ASC;" % (
+            self.symbol, begMonth, endMonth)
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+    def getGainsForMonth(self, month):
+        sql = "SELECT * FROM saisonal_m WHERE month = %s AND stockTicker = \"%s\";" % (
+            month, self.symbol)
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+    def getGainForMonth(self, month):
+        sql = "SELECT * FROM %s WHERE month = %s" % (self.symbol, month)
         self.cursor.execute(sql)
         return self.cursor.fetchall()
 

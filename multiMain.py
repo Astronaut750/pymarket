@@ -3,6 +3,7 @@ import json
 from multiDB import TableManager
 import time
 
+
 def buildUrl(symbol):
   # Zu Base-Url wird API-Key und Kürzel hinzugefügt
     url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&outputsize=full&apikey="
