@@ -38,12 +38,37 @@ class TableManager:
         self.cursor.execute(sql)
 
     def insertSaisonal(self, symbol, year, month, gain):
-        sql = "INSERT INTO saisonal_m VALUES(\"%s\", %s, %s, %s);" % (
+        sql = "INSERT INTO zz_saisonal_m VALUES(\"%s\", %s, %s, %s);" % (
             symbol, year, month, gain)
         self.cursor.execute(sql)
 
+    def insertSplit(self, date, value):
+        sql = "INSERT INTO zz_splits values (\"%s\", \"%s\", %s)" % (
+            self.symbol, date, value)
+        self.cursor.execute(sql)
+
     def deleteFromSaisonal(self):
-        sql = "DELETE FROM saisonal_m;"
+        sql = "DELETE FROM zz_saisonal_m;"
+        self.cursor.execute(sql)
+        self.commit()
+
+    def getLatestTrade(self):
+        sql = "SELECT * FROM zz_backtestingsuite order by date desc limit 1"
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()[0]
+
+    def getSplits(self):
+        sql = "SELECT date, value FROM zz_splits WHERE ticker = \"%s\"" % self.symbol
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+    def deleteFrom(self, symbol):
+        sql = "DELETE FROM %s;" % symbol
+        self.cursor.execute(sql)
+        self.commit()
+
+    def deleteSplits(self):
+        sql = "DELETE FROM zz_splits where ticker = \"%s\"" % self.symbol
         self.cursor.execute(sql)
         self.commit()
 
@@ -62,6 +87,11 @@ class TableManager:
 
     def getFirstDate(self):
         sql = "SELECT date FROM %s ORDER BY date ASC LIMIT 1;" % self.symbol
+        self.cursor.execute(sql)
+        return self.cursor.fetchone()[0]
+
+    def getFirstAVG200Date(self):
+        sql = "SELECT date FROM %s WHERE average200 IS NOT NULL ORDER BY date ASC LIMIT 1;" % self.symbol
         self.cursor.execute(sql)
         return self.cursor.fetchone()[0]
 
@@ -89,8 +119,14 @@ class TableManager:
         self.cursor.execute(sql)
         return self.cursor.fetchall()
 
+    def getDataSingleDay(self, date):
+        sql = "SELECT * FROM %s WHERE date >= \"%s\" LIMIT 1" % (
+            self.symbol, date)
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()[0]
+
     def getGainsForMonth(self, month):
-        sql = "SELECT * FROM saisonal_m WHERE month = %s AND stockTicker = \"%s\";" % (
+        sql = "SELECT * FROM zz_saisonal_m WHERE month = %s AND stockTicker = \"%s\";" % (
             month, self.symbol)
         self.cursor.execute(sql)
         return self.cursor.fetchall()

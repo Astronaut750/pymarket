@@ -1,1 +1,1 @@
-tsla,aapl,amd,intc,siri,msft,csco,mu,cmcsa,mdlz,amat,qcom
+tsla

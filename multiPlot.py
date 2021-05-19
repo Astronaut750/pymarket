@@ -18,8 +18,8 @@ def latestFirstDate(stocks):
     firstdate = fiso("1900-01-01")
     for symbol in stocks:
         tb = TableManager(symbol)
-        if fiso(tb.getFirstDate()) > firstdate:
-            firstdate = fiso(tb.getFirstDate())
+        if fiso(tb.getFirstAVG200Date()) > firstdate:
+            firstdate = fiso(tb.getFirstAVG200Date())
     return firstdate
 
 
@@ -72,7 +72,7 @@ def plot(dbData):
         os.mkdir(path)
     plt.savefig("./img/%s/%s_%s.png" %
                 (tb.getSymbol(), str(dates[0]), str(dates[-1])))
-    # plt.show()
+    plt.show()
 
 
 stocks = open("stocks.txt").read().split(",")

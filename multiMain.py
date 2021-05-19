@@ -6,9 +6,13 @@ import time
 
 def buildUrl(symbol):
   # Zu Base-Url wird API-Key und Kürzel hinzugefügt
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&outputsize=full&apikey="
+    url = "https://www.alphavantage.co/query"
+    url += "?function=TIME_SERIES_DAILY_ADJUSTED"
+    url += "&outputsize=full"
+    url += "&apikey="
     url += open("apikey.txt").read()
-    url += "&symbol=" + symbol
+    url += "&symbol="
+    url += symbol
     return url
 
 
@@ -27,7 +31,7 @@ for symbol in stocks:
         jsonData = jsonData["Time Series (Daily)"]
 
     elif "Note" in jsonData:
-        print("Bandwidth exhausted (max. 5 per minute)")
+        print("Bandwidth exhausted (max. 5 requests per minute)")
         break
 
     elif "Error Message" in jsonData:
@@ -53,7 +57,7 @@ for symbol in stocks:
             if date == latestDbEntry:
                 break
 
-            close = jsonData[date]["5. adjusted close"]
+            close = round(float(jsonData[date]["5. adjusted close"]), 2)
             tb.insertClose(date, close)
             counter += 1
 
@@ -67,7 +71,12 @@ for symbol in stocks:
               tb.getSymbol())
 
         for date in jsonData:
-            close = jsonData[date]["5. adjusted close"]
+            if jsonData[date]["8. split coefficient"] != "1.0":
+                print("  Split on %s with value %s" %
+                      (date, jsonData[date]["8. split coefficient"]))
+                tb.deleteSplits()
+                tb.insertSplit(date, jsonData[date]["8. split coefficient"])
+            close = round(float(jsonData[date]["5. adjusted close"]), 2)
             tb.insertClose(date, close)
 
     tb.commit()
@@ -87,4 +96,6 @@ for symbol in stocks:
 
     tb.commit()
     print("  Moving average calculated and saved to DB.\n\n")
-    time.sleep(15)
+
+    if len(stocks) > 5:
+        time.sleep(15)
