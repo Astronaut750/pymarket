@@ -26,7 +26,8 @@ class Depot:
     def addSellingTrade(self, data):
         tb = TableManager(self.symbol)
         latestTrade = tb.getLatestTrade()
-        self.money += round(latestTrade[4] * data[1], 2)
+        self.money += latestTrade[4] * data[1]
+        self.money = round(self.money, 2)
         print(" SELL", latestTrade[4], self.symbol, "ON",
               data[0], "FOR", data[1], "| Depot:", self.money)
 
