@@ -3,48 +3,45 @@ from multiDB import TableManager
 
 
 class Depot:
-    money = 0.0
-    trades = []
-    symbol = ""
-
-    def __init__(self, symbol):
+    def __init__(self, symbol, date):
         self.money = 100000.0
         self.symbol = symbol
+        self.printTrade("SELL", 1337, self.symbol, date, 420.69, round(self.money, 2))
 
-    def addBuyingTrade(self, data):
-        amount = math.floor(self.money / data[1])
-        self.money = round(self.money - data[1] * amount, 2)
-        print("  BUY", amount, self.symbol, "ON",
-              data[0], "FOR", data[1], "| Depot:", self.money)
+    def printTrade(self, action, amount, symbol, date, price, depot):
+        print("%5s %4s %4s ON %s FOR %6s | Depot: %10s" % (
+            action, amount, symbol, date, price, depot))
+
+    def addBuyingTrade(self, tb, tempTuple):
+        amount = math.floor(self.money / tempTuple[1])
+        self.money = round(self.money - tempTuple[1] * amount, 2)
+        self.printTrade("BUY", amount, self.symbol, tempTuple[0], tempTuple[1], self.money)
+        
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"BUY\", %s, %s, %s)" % (
-            data[0], self.symbol, data[1], amount, self.money)
+            tempTuple[0], self.symbol, tempTuple[1], amount, self.money)
 
-        tb = TableManager(self.symbol)
         tb.cursor.execute(sql)
         tb.commit()
 
-    def addSellingTrade(self, data):
-        tb = TableManager(self.symbol)
+    def addSellingTrade(self, tb, tempTuple):
         latestTrade = tb.getLatestTrade()
-        self.money += latestTrade[4] * data[1]
+        self.money += latestTrade[4] * tempTuple[1]
         self.money = round(self.money, 2)
-        print(" SELL", latestTrade[4], self.symbol, "ON",
-              data[0], "FOR", data[1], "| Depot:", self.money)
+        self.printTrade("SELL", latestTrade[4], self.symbol, tempTuple[0], tempTuple[1], self.money)
 
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"SELL\", %s, %s, %s)" % (
-            data[0], self.symbol, data[1], latestTrade[4], self.money)
+            tempTuple[0], self.symbol, tempTuple[1], latestTrade[4], self.money)
 
         tb.cursor.execute(sql)
         tb.commit()
 
-    def addSplitCorrection(self, data, value):
-        tb = TableManager(self.symbol)
+    def addSplitCorrection(self, tb, tempTuple, value):
         latestTrade = tb.getLatestTrade()
-        amount = latestTrade[4] * value
-        print("SPLIT", amount, self.symbol, "ON",
-              data[0], "FOR", latestTrade[3], "| Depot:", self.money)
+        amount = int(latestTrade[4] * value)
+
+        self.printTrade("SPLIT", amount, self.symbol, tempTuple[0], tempTuple[1], self.money)
 
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"SPLT\", %s, %s, %s)" % (
-            data[0], self.symbol, latestTrade[3], amount, self.money)
+            tempTuple[0], self.symbol, latestTrade[3], amount, self.money)
         tb.cursor.execute(sql)
         tb.commit()
