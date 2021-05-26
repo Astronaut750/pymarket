@@ -1,24 +1,34 @@
+from json.decoder import JSONDecoder
 from multiDB import TableManager
 from depot import Depot
 import datetime
+import json
 
 stocks = open("stocks.txt").read().split(",")
-tempDate = "2015-01-01"
+starting_conf = json.loads(open("backtestingsuite.json").read())
 
 for stock in stocks:
-    print("Simulating %s starting at %s\n" % (stock, tempDate))
-
     tb = TableManager(stock)
+    
+    splits = [] if starting_conf["with_splits"] == False else tb.getSplits()
+
     tb.deleteFrom("zz_backtestingsuite")
 
-    tempDate = datetime.date.fromisoformat(tempDate)
-    tempTuple = tb.getDataSingleDay(tempDate.isoformat()) # 0 := date | 1 := close | 2 := avg200
+    # Getting date from config as str
+    tempDate = starting_conf["starting_date"]
+
+    # getting temporary first tuple
+    tempTuple = tb.getDataSingleDay(tempDate)
+    # tempTuple => 0 := date | 1 := close | 2 := avg200
+
+    # 
     tempDate = datetime.date.fromisoformat(tempTuple[0])
 
-    dpt = Depot(tb.symbol, tempDate)
-    splits = tb.getSplits()
+    print("\nSimulating %s starting at %s\n" % (stock, tempDate))
+    dpt = Depot(starting_conf["starting_money"], tb.symbol, tempDate, tb)
 
-    while(tempDate < datetime.date.today()):
+    #tempDate < datetime.date.today()
+    while(True):
         try:
             tempTuple = tb.getDataSingleDay(tempDate.isoformat())
         except:
@@ -47,5 +57,5 @@ for stock in stocks:
                     dpt.addSplitCorrection(tb, tempTuple, s[1])
             
         dpt.addSellingTrade(tb, tempTuple)
-    
-    print("\n\n")
+
+    print("\n")
