@@ -16,9 +16,9 @@ def buildUrl(symbol):
     return url
 
 
-stocks = open("stocks.txt").read().split(",")
+starting_conf = json.loads(open("config.json").read())
 
-for symbol in stocks:
+for symbol in starting_conf["stocks"]:
     tb = TableManager(symbol)
     tb.createTable()
     url = buildUrl(tb.getSymbol())
@@ -97,5 +97,5 @@ for symbol in stocks:
     tb.commit()
     print("  Moving average calculated and saved to DB.\n\n")
 
-    if len(stocks) > 5:
+    if len(starting_conf["stocks"]) > 5:
         time.sleep(15)

@@ -125,6 +125,12 @@ class TableManager:
         self.cursor.execute(sql)
         return self.cursor.fetchall()[0]
 
+    def getDataSingleDayBefore(self, date):
+        sql = "SELECT * FROM %s WHERE date <= \"%s\" ORDER BY date DESC LIMIT 1" % (
+            self.symbol, date)
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()[0]
+
     def getGainsForMonth(self, month):
         sql = "SELECT * FROM zz_saisonal_m WHERE month = %s AND stockTicker = \"%s\";" % (
             month, self.symbol)
