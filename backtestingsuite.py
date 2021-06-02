@@ -5,7 +5,6 @@ import json
 
 starting_conf = json.loads(open("config.json").read())
 
-
 def strategy200(tb, dpt, tempDate, percent=0):
     while(True):
         try:
@@ -42,6 +41,7 @@ def strategy200(tb, dpt, tempDate, percent=0):
 
         dpt.addSellingTrade(tb, tempTuple)
 
+    printLatestTrade(tb, dpt)
 
 def schulerer(tb, dpt, tempDate, percent=0):
     while(True):
@@ -79,6 +79,7 @@ def schulerer(tb, dpt, tempDate, percent=0):
 
         dpt.addSellingTrade(tb, tempTuple)
 
+    printLatestTrade(tb, dpt)
 
 def buyAndHold(tb, dpt, tempDate):
     tempTuple = tb.getDataSingleDay(tempDate.isoformat())
@@ -86,6 +87,15 @@ def buyAndHold(tb, dpt, tempDate):
 
     tempTuple = tb.getDataSingleDayBefore(datetime.date.today().isoformat())
     dpt.addSellingTrade(tb, tempTuple)
+
+    printLatestTrade(tb, dpt)
+
+
+def printLatestTrade(tb, dpt):
+    latestTrade = tb.getLatestTrade()
+    tempTuple = tb.getDataSingleDay(latestTrade[0])
+    dpt.printTrade("SELL", latestTrade[4], tb.getSymbol(), tempTuple[0], tempTuple[1], dpt.getMoney())
+    print()
 
 
 for stock in starting_conf["stocks"]:
@@ -105,33 +115,17 @@ for stock in starting_conf["stocks"]:
     print("Simulating %s starting at %s" % (stock, tempDate))
 
     print("Avg200-Strategy:")
-    tb.deleteFrom("zz_backtestingsuite")
-    dpt = Depot(starting_conf["starting_money"],
-                tb.symbol, starting_conf["starting_date"], tb)
+    dpt = Depot(tb.symbol, tb)
     strategy200(tb, dpt, tempDate)
 
-    print()
-
     print("Avg200-Strategy (3% late):")
-    tb.deleteFrom("zz_backtestingsuite")
-    dpt = Depot(starting_conf["starting_money"],
-                tb.symbol, starting_conf["starting_date"], tb)
+    dpt = Depot(tb.symbol, tb)
     strategy200(tb, dpt, tempDate, percent=3)
 
-    print()
-
     print("Buy&Hold-Strategy:")
-    tb.deleteFrom("zz_backtestingsuite")
-    dpt = Depot(starting_conf["starting_money"],
-                tb.symbol, starting_conf["starting_date"], tb)
+    dpt = Depot(tb.symbol, tb)
     buyAndHold(tb, dpt, tempDate)
 
-    print()
-
     print("Schulerer-Strategy:")
-    tb.deleteFrom("zz_backtestingsuite")
-    dpt = Depot(starting_conf["starting_money"],
-                tb.symbol, starting_conf["starting_date"], tb)
+    dpt = Depot(tb.symbol, tb)
     schulerer(tb, dpt, tempDate)
-
-    # print(tb.getDataSingleDayBefore(datetime.date.today().isoformat()))

@@ -1,12 +1,13 @@
 import math
-from multiDB import TableManager
-
+import json
 
 class Depot:
-    def __init__(self, starting_money, symbol, date, tb):
-        self.money = starting_money
+    def __init__(self, symbol, tb):
+        tb.deleteFrom("zz_backtestingsuite")
+        starting_conf = json.loads(open("config.json").read())
+        self.money = starting_conf["starting_money"]
         self.symbol = symbol
-        self._initiateDepot(date, tb)
+        self._initiateDepot(starting_conf["starting_date"], tb)
         # latestTrade => 0 := date, 1 := ticker, 2 := action, 3 := price, 4 := amount, 5 := depot
 
     def _initiateDepot(self, date, tb):
@@ -27,8 +28,9 @@ class Depot:
     def addBuyingTrade(self, tb, tempTuple):
         amount = math.floor(self.money / tempTuple[1])
         self.money = round(self.money - tempTuple[1] * amount, 2)
-        self.printTrade("BUY", amount, self.symbol,
-                        tempTuple[0], tempTuple[1], self.money)
+
+        if(tb.getTradeCount() == 1):
+            self.printTrade("BUY", amount, self.symbol, tempTuple[0], tempTuple[1], self.money)
 
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"BUY\", %s, %s, %s)" % (
             tempTuple[0], self.symbol, tempTuple[1], amount, self.money)
@@ -42,8 +44,7 @@ class Depot:
         self.money += amount * tempTuple[1]
         self.money = round(self.money, 2)
 
-        self.printTrade(
-            "SELL", latestTrade[4], self.symbol, tempTuple[0], tempTuple[1], self.money)
+        # self.printTrade( "SELL", latestTrade[4], self.symbol, tempTuple[0], tempTuple[1], self.money)
 
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"SELL\", %s, %s, %s)" % (
             tempTuple[0], self.symbol, tempTuple[1], latestTrade[4], self.money)

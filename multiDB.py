@@ -57,6 +57,11 @@ class TableManager:
         self.cursor.execute(sql)
         return self.cursor.fetchall()[0]
 
+    def getTradeCount(self):
+        sql = "SELECT * FROM zz_backtestingsuite order by date desc"
+        self.cursor.execute(sql)
+        return len(self.cursor.fetchall())
+
     def getSplits(self):
         sql = "SELECT date, value FROM zz_splits WHERE ticker = \"%s\"" % self.symbol
         self.cursor.execute(sql)
