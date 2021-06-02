@@ -2,5 +2,5 @@
     "starting_money": 10000,
     "starting_date": "2015-01-01",
     "with_splits": false,
-    "stocks": ["tsla"]
+    "stocks": ["ibm"]
 }

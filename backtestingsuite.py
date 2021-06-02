@@ -95,6 +95,14 @@ def printLatestTrade(tb, dpt):
     latestTrade = tb.getLatestTrade()
     tempTuple = tb.getDataSingleDay(latestTrade[0])
     dpt.printTrade("SELL", latestTrade[4], tb.getSymbol(), tempTuple[0], tempTuple[1], dpt.getMoney())
+    change = round( (dpt.getMoney() * 100 / starting_conf["starting_money"]) - 100, 1)
+
+    if change < 0:
+        change -= 2 * change
+        print("Prozentuale Veränderung: -%5s%%" % change)
+    else:
+        print("Prozentuale Veränderung: +%5s%%" % change)
+
     print()
 
 
