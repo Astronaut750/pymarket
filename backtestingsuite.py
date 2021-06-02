@@ -43,7 +43,7 @@ def strategy200(tb, dpt, tempDate, percent=0):
 
     printLatestTrade(tb, dpt)
 
-def schulerer(tb, dpt, tempDate, percent=0):
+def schulerer(tb, dpt, tempDate):
     while(True):
         try:
             tempTuple = tb.getDataSingleDay(tempDate.isoformat())
@@ -52,7 +52,7 @@ def schulerer(tb, dpt, tempDate, percent=0):
             break
 
         # Waiting to buy
-        while(tempTuple[1] >= tempTuple[2] * (1 + 0.01 * percent)):
+        while(tempTuple[1] >= tempTuple[2]):
             tempDate += datetime.timedelta(days=1)
             try:
                 tempTuple = tb.getDataSingleDay(tempDate.isoformat())
@@ -63,19 +63,13 @@ def schulerer(tb, dpt, tempDate, percent=0):
         dpt.addBuyingTrade(tb, tempTuple)
 
         # Waiting to sell
-        while(tempTuple[1] <= tempTuple[2] * (1 - 0.01 * percent)):
+        while(tempTuple[1] <= tempTuple[2]):
             tempDate += datetime.timedelta(days=1)
             try:
                 tempTuple = tb.getDataSingleDay(tempDate.isoformat())
             except:
                 break
             tempDate = datetime.date.fromisoformat(tempTuple[0])
-
-            # ! unnötig, wenn man die korrigierten Werte vor dem Split nimmt
-            # Checking for split
-            # for s in splits:
-            #    if tempDate.isoformat() == s[0]:
-            #        dpt.addSplitCorrection(tb, tempTuple, s[1])
 
         dpt.addSellingTrade(tb, tempTuple)
 
@@ -90,7 +84,6 @@ def buyAndHold(tb, dpt, tempDate):
 
     printLatestTrade(tb, dpt)
 
-
 def printLatestTrade(tb, dpt):
     latestTrade = tb.getLatestTrade()
     tempTuple = tb.getDataSingleDay(latestTrade[0])
@@ -99,28 +92,26 @@ def printLatestTrade(tb, dpt):
 
     if change < 0:
         change -= 2 * change
-        print("Prozentuale Veränderung: -%5s%%" % change)
+        print("Prozentuale Veränderung: -%6s%%" % change)
     else:
-        print("Prozentuale Veränderung: +%5s%%" % change)
+        print("Prozentuale Veränderung: +%6s%%" % change)
 
     print()
+
+def getFirstValidDate():
+    date = starting_conf["starting_date"]
+    tempTuple = tb.getDataSingleDay(date)
+    return datetime.date.fromisoformat(tempTuple[0])
 
 
 for stock in starting_conf["stocks"]:
     tb = TableManager(stock)
-    splits = [] if starting_conf["with_splits"] == False else tb.getSplits()
-    tb.deleteFrom("zz_backtestingsuite")
+    
+    # ignoring splits because we already calculate with adjusted close values
+    # splits = tb.getSplits() if starting_conf["with_splits"] else []
 
-    # Getting date from config as str
-    tempDate = starting_conf["starting_date"]
-
-    # getting temporary first tuple
-    tempTuple = tb.getDataSingleDay(tempDate)
-    # tempTuple => 0 := date | 1 := close | 2 := avg200
-
-    tempDate = datetime.date.fromisoformat(tempTuple[0])
-
-    print("Simulating %s starting at %s" % (stock, tempDate))
+    tempDate = getFirstValidDate()
+    print("Simulating %s starting at %s\n" % (stock, tempDate))
 
     print("Avg200-Strategy:")
     dpt = Depot(tb.symbol, tb)
@@ -137,3 +128,8 @@ for stock in starting_conf["stocks"]:
     print("Schulerer-Strategy:")
     dpt = Depot(tb.symbol, tb)
     schulerer(tb, dpt, tempDate)
+
+    print("\n\n")
+
+    # tuple => 0 := date | 1 := close  | 2 := avg200
+    # trade => 0 := date | 1 := ticker | 2 := action | 3 := price | 4 := amount | 5 := depot

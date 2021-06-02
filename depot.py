@@ -8,7 +8,6 @@ class Depot:
         self.money = starting_conf["starting_money"]
         self.symbol = symbol
         self._initiateDepot(starting_conf["starting_date"], tb)
-        # latestTrade => 0 := date, 1 := ticker, 2 := action, 3 := price, 4 := amount, 5 := depot
 
     def _initiateDepot(self, date, tb):
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"SELL\", %s, %s, %s)" % (
