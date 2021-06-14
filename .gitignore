@@ -129,3 +129,5 @@ dmypy.json
 /.vscode
 /img
 /.idea
+
+/temp.py

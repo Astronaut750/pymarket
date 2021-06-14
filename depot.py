@@ -4,16 +4,16 @@ import json
 class Depot:
     def __init__(self, symbol, tb):
         tb.deleteFrom("zz_backtestingsuite")
-        starting_conf = json.loads(open("config.json").read())
-        self.money = starting_conf["starting_money"]
+        self.starting_conf = json.loads(open("config.json").read())
+        self.money = self.starting_conf["starting_money"]
         self.symbol = symbol
-        self._initiateDepot(starting_conf["starting_date"], tb)
+        self._initiateDepot(self.starting_conf["starting_date"], tb)
 
     def _initiateDepot(self, date, tb):
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"SELL\", %s, %s, %s)" % (
             date, self.symbol, 0.0, 0, self.money)
         self.printTrade("SELL", 0, self.symbol, date,
-                        0.0, round(self.money, 2))
+                        0.0, round(self.money, 3))
         tb.cursor.execute(sql)
         tb.commit()
 
@@ -26,9 +26,9 @@ class Depot:
 
     def addBuyingTrade(self, tb, tempTuple):
         amount = math.floor(self.money / tempTuple[1])
-        self.money = round(self.money - tempTuple[1] * amount, 2)
+        self.money = round(self.money - tempTuple[1] * amount, 3)
 
-        if(tb.getTradeCount() == 1):
+        if(tb.getTradeCount() == 1 or self.starting_conf["print_intertrades"]):
             self.printTrade("BUY", amount, self.symbol, tempTuple[0], tempTuple[1], self.money)
 
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"BUY\", %s, %s, %s)" % (
@@ -41,9 +41,10 @@ class Depot:
         latestTrade = tb.getLatestTrade()
         amount = latestTrade[4]
         self.money += amount * tempTuple[1]
-        self.money = round(self.money, 2)
+        self.money = round(self.money, 3)
 
-        # self.printTrade( "SELL", latestTrade[4], self.symbol, tempTuple[0], tempTuple[1], self.money)
+        if(self.starting_conf["print_intertrades"]):
+            self.printTrade( "SELL", latestTrade[4], self.symbol, tempTuple[0], tempTuple[1], self.money)
 
         sql = "insert into zz_backtestingsuite values (\"%s\", \"%s\", \"SELL\", %s, %s, %s)" % (
             tempTuple[0], self.symbol, tempTuple[1], latestTrade[4], self.money)
