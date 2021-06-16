@@ -125,7 +125,7 @@ class TableManager:
         return self.cursor.fetchall()
 
     def getDataSingleDay(self, date):
-        sql = "SELECT * FROM %s WHERE date >= \"%s\" LIMIT 1" % (
+        sql = "SELECT * FROM %s WHERE date >= \"%s\" AND average200 IS NOT NULL LIMIT 1" % (
             self.symbol, date)
         self.cursor.execute(sql)
         return self.cursor.fetchall()[0]
