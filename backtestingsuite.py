@@ -2,7 +2,8 @@ from multiDB import TableManager
 from depot import Depot
 import datetime
 import json
-import operator as op
+from datetime import date as dt
+from matplotlib import pyplot as plt
 
 # tuple => 0 := date | 1 := close  | 2 := avg200
 # trade => 0 := date | 1 := ticker | 2 := action | 3 := price | 4 := amount | 5 := depot
@@ -10,22 +11,17 @@ import operator as op
 starting_conf = json.loads(open("config.json").read())
 starting_conf["starting_money"] /= len(starting_conf["stocks"])
 
-operatorlookup = {
-    '>=': op.ge,
-    '<=': op.le
-}
 
-
-def strategy200(tb, dpt, tempDate, percent=0, schulerer=False, text="Avg200-Strategy:"):
+def strategy200(tb, dpt, tempDate, percent=0, schulerer=False):
     while(True):
         try:
             tempTuple = tb.getDataSingleDay(tempDate.isoformat())
         except:
             break
 
-        # Waiting to buy  if not schulerer else op.gt(close, avg200) op.lt(
-        while((tempTuple[1] < tempTuple[2] * (1 + 0.01 * percent)
-               ) if not schulerer else tempTuple[1] > tempTuple[2] * (1 + 0.01 * percent)):
+        # Waiting to buy
+        while((tempTuple[1] < tempTuple[2] * (1 + (percent / 100)))
+         if not schulerer else tempTuple[1] > tempTuple[2] * (1 + 0.01 * percent)):
             tempDate += datetime.timedelta(days=1)
             try:
                 tempTuple = tb.getDataSingleDay(tempDate.isoformat())
@@ -35,7 +31,7 @@ def strategy200(tb, dpt, tempDate, percent=0, schulerer=False, text="Avg200-Stra
 
         dpt.addBuyingTrade(tb, tempTuple)
 
-        # Waiting to sell  if not schulerer else op.ge(close, avg200) op.le(
+        # Waiting to sell
         while((tempTuple[1] >= tempTuple[2] * (1 + 0.01 * percent)
                ) if not schulerer else tempTuple[1] <= tempTuple[2] * (1 + 0.01 * percent)):
             tempDate += datetime.timedelta(days=1)
@@ -52,8 +48,6 @@ def strategy200(tb, dpt, tempDate, percent=0, schulerer=False, text="Avg200-Stra
             #        dpt.addSplitCorrection(tb, tempTuple, s[1])
 
         dpt.addSellingTrade(tb, tempTuple)
-
-    # printResult(dpt, text)
 
 
 def buyAndHold(tb, dpt, tempDate):
@@ -101,6 +95,35 @@ def printResult(dpt, text):
         # print("Prozentuale Veränderung: +%6s%%" % change)
 
 
+def plot(tb, dpt, text):
+    if starting_conf["show_plots"]:
+        dates = []
+        depot = []
+        for date in dpt.getAllTrades(tb):
+            dates.append(dt.fromisoformat(date[0]))
+            depot.append(date[5])
+
+        fig, ax = plt.subplots()
+        ax.plot(dates, depot)
+        plt.xlabel("dates")
+        plt.ylabel("depot")
+        plt.title(tb.getSymbol() + " " + text)
+        plt.savefig("./backtesting/%s/%s.png" % (tb.getSymbol(), text))
+        # plt.show()
+
+
+def printResult(strategyResult):
+    change = (strategyResult /
+              starting_conf["starting_money"] * len(starting_conf["stocks"])) - 1
+    strategyResult = "{:=15,.2f} €".format(strategyResult).replace(
+        '.', '#').replace(',', '.').replace('#', ',')
+    if change < 0:
+        change -= 2 * change
+    print("%s (%s)" % (
+        strategyResult,
+        "{:=+11.2%}".format(change).replace('%', " %")))
+
+
 strategy200Result = 0.0
 strategy200lateResult = 0.0
 buyAndHoldResult = 0.0
@@ -115,31 +138,35 @@ for stock in starting_conf["stocks"]:
     dpt = Depot(tb.symbol, tb)
     strategy200(tb, dpt, tempDate)
     strategy200Result += dpt.getMoney()
+    plot(tb, dpt, "Normal")
 
     dpt = Depot(tb.symbol, tb)
-    strategy200(tb, dpt, tempDate, percent=3,
-                text="Avg200-Strategy (3% late):")
+    strategy200(tb, dpt, tempDate, percent=3)
     strategy200lateResult += dpt.getMoney()
+    plot(tb, dpt, "Plus3Percent")
 
     dpt = Depot(tb.symbol, tb)
     buyAndHold(tb, dpt, tempDate)
     buyAndHoldResult += dpt.getMoney()
+    plot(tb, dpt, "BuyAndHold")
 
     dpt = Depot(tb.symbol, tb)
-    strategy200(tb, dpt, tempDate, schulerer=True, text="Schulerer-Strategy:")
+    strategy200(tb, dpt, tempDate, schulerer=True)
     schulererResult += dpt.getMoney()
+    plot(tb, dpt, "Inverse")
 
 
-def printResult(strategyResult):
-    change = round( (strategyResult * 100 / starting_conf["starting_money"] * len(starting_conf["stocks"])) - 100, 3)
-    if change < 0:
-        change -= 2 * change
-        print("%11s (-%6s%%)" % (strategyResult, change))
-    else:
-        print("%11s (+%6s%%)" % (strategyResult, change))
-    pass
 
+print("\nAvg200-Strategy:")
 printResult(strategy200Result)
+
+print("\nAvg200-Strategy + 3%:")
 printResult(strategy200lateResult)
+
+print("\nBuy&Hold-Strategy:")
 printResult(buyAndHoldResult)
+
+print("\nInverse-Strategy:")
 printResult(schulererResult)
+
+# "stocks": ["ibm", "amzn", "tsla", "ptc", "atvi"],

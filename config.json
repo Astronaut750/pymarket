@@ -1,7 +1,8 @@
 {
-    "starting_money": 100000,
-    "starting_date": "2010-01-01",
-    "with_splits": false,
-    "print_intertrades": false,
-    "stocks": ["tsla", "ibm", "atvi", "ptc", "amzn"]
+  "starting_money": 100000,
+  "starting_date": "2010-01-01",
+  "with_splits": false,
+  "print_intertrades": false,
+  "stocks": ["ibm", "amzn", "tsla", "ptc", "atvi"],
+  "show_plots": true
 }

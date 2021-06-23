@@ -70,14 +70,26 @@ for symbol in starting_conf["stocks"]:
         print("  Table \"%s\" is empty. Saving full API call.\n" %
               tb.getSymbol())
 
+        split_coefficient = 1.0
+
         for date in jsonData:
+
+            current_split = jsonData[date]["8. split coefficient"]
+
+            close = float(jsonData[date]["4. close"])
+            close /= split_coefficient
+            close = round(close, 2)
+            
             if jsonData[date]["8. split coefficient"] != "1.0":
                 print("  Split on %s with value %s" %
                       (date, jsonData[date]["8. split coefficient"]))
                 tb.deleteSplits()
                 tb.insertSplit(date, jsonData[date]["8. split coefficient"])
-            close = round(float(jsonData[date]["5. adjusted close"]), 2)
+            
+            # close = round(float(jsonData[date]["5. adjusted close"]), 4)
             tb.insertClose(date, close)
+            
+            split_coefficient *= float(current_split)
 
     tb.commit()
 
@@ -91,11 +103,11 @@ for symbol in starting_conf["stocks"]:
             sum += dbData[i+j][1]
 
         result = sum / moving_average_days
-        result = round(result, 2)
+        result = round(result, 4)
         tb.insertAverage200(dbData[i][0], result)
 
     tb.commit()
     print("  Moving average calculated and saved to DB.\n\n")
 
-    if len(starting_conf["stocks"]) > 5:
+    if len(starting_conf["stocks"]) >= 4:
         time.sleep(15)

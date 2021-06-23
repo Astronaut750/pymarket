@@ -17,6 +17,12 @@ class Depot:
         tb.cursor.execute(sql)
         tb.commit()
 
+    def getAllTrades(self, tb):
+        sql = "select * from zz_backtestingsuite order by date desc;"
+        tb.cursor.execute(sql)
+        return tb.cursor.fetchall()
+
+
     def getMoney(self):
         return self.money
 
